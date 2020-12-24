@@ -3510,6 +3510,7 @@ double computeAge( double inLifeStartTimeSeconds ) {
 
 double computeAge( LiveObject *inPlayer ) {
     double age = computeAge( inPlayer->lifeStartTimeSeconds );
+    if( age > 30 ) age = 30;
     if( age >= forceDeathAge ) {
         setDeathReason( inPlayer, "age" );
         
@@ -7225,6 +7226,7 @@ static void updateYum( LiveObject *inPlayer, int inFoodEatenID,
 
 // returns -1 if not in a tool set
 int getToolSet( int inToolID ) {
+	return -1;
     ObjectRecord *toolO = getObject( inToolID );
     
     // is it a marked tool?
@@ -7236,6 +7238,7 @@ int getToolSet( int inToolID ) {
 
 
 char canPlayerUseTool( LiveObject *inPlayer, int inToolID ) {
+	return true;
     ObjectRecord *toolO = getObject( inToolID );
                                     
     // is it a marked tool?
