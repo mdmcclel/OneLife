@@ -14683,7 +14683,8 @@ static void endBiomeSickness(
     // relief emot
     nextPlayer->emotFrozen = false;
     nextPlayer->emotUnfreezeETA = 0;
-        
+    nextPlayer->emotFrozenIndex = 0;
+    
     newEmotPlayerIDs.push_back( 
         nextPlayer->id );
         
