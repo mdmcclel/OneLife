@@ -5818,17 +5818,7 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay ) {
         }
     if( strcmp( inToSay, curseBabyPhrase ) == 0 ) {
         isBabyShortcut = true;
-        }
-
-    
-    if( inPlayer->isTwin ) {
-        // block twins from cursing
-        cursedName = NULL;
-        
-        isYouShortcut = false;
-        isBabyShortcut = false;
-        }
-    
+        }    
     
     
     if( cursedName != NULL || isYouShortcut ) {
@@ -5866,8 +5856,7 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay ) {
     int curseDistance = SettingsManager::getIntSetting( "curseDistance", 200 );
     
         
-    if( ! inPlayer->isTwin &&
-        cursedName == NULL &&
+    if( cursedName == NULL &&
         players.size() >= minActivePlayersForLanguages ) {
         
         // consider cursing in other languages
@@ -6121,8 +6110,7 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay ) {
 
 
     if( isCurse ) {
-        if( ! inPlayer->isTwin && 
-            inPlayer->curseStatus.curseLevel == 0 &&
+        if( inPlayer->curseStatus.curseLevel == 0 &&
             hasCurseToken( inPlayer->email ) ) {
             inPlayer->curseTokenCount = 1;
             }
@@ -9839,6 +9827,64 @@ int processLoggedInPlayer( int inAllowOrForceReconnect,
                 Time::getCurrentTime() - forceAge * ( 1.0 / getAgeRate() );
             }
         }
+
+
+    
+    if( SettingsManager::getIntSetting( "maleOverrideEnabled", 0 ) &&
+        getObject( newObject.displayID )->male ) {
+        
+        int targetRace = getObject( newObject.displayID )->race;
+        
+        char *cont = SettingsManager::getSettingContents( "maleOverride" );
+    
+        if( cont != NULL ) {
+            
+            int numParts;
+            char **lines = split( cont, "\n", &numParts );
+
+            delete [] cont;
+    
+            for( int i=0; i<numParts; i++ ) {
+                ForceSpawnRecord r;
+
+                int race = 0;
+
+                int numRead = sscanf(
+                    lines[i],
+                    "%d %d %d %d %d %d %d", 
+                    &race,
+                    &r.displayID,
+                    &r.hatID,
+                    &r.tunicID,
+                    &r.bottomID,
+                    &r.frontShoeID,
+                    &r.backShoeID );
+                        
+                if( numRead == 7 ) {
+                    if( race == targetRace ) {
+                        newObject.displayID = r.displayID;
+        
+                        newObject.clothing.hat = getObject( r.hatID, true );
+                        newObject.clothing.tunic = getObject( r.tunicID, true );
+                        newObject.clothing.bottom =
+                            getObject( r.bottomID, true );
+                        newObject.clothing.frontShoe = 
+                            getObject( r.frontShoeID, true );
+                        newObject.clothing.backShoe = 
+                            getObject( r.backShoeID, true );
+
+                        break;
+                        }
+                    }
+                }
+
+            for( int i=0; i<numParts; i++ ) {
+                delete [] lines[i];
+                }
+            delete [] lines;
+            }        
+        }
+    
     
 
     newObject.holdingID = 0;
@@ -9880,7 +9926,6 @@ int processLoggedInPlayer( int inAllowOrForceReconnect,
     
 
     if( newObject.curseStatus.curseLevel == 0 &&
-        ! newObject.isTwin &&
         hasCurseToken( inEmail ) ) {
         newObject.curseTokenCount = 1;
         }
@@ -10386,7 +10431,18 @@ int processLoggedInPlayer( int inAllowOrForceReconnect,
         }
     
 
-    addRecentScore( newObject.email, inFitnessScore );
+    // don't count in recent score pool for
+    // -- tutorial players
+    // -- players that are cycling back to same family
+    // -- d-town players
+    if( ! newObject.isTutorial
+        &&
+        forceOffspringLineageID == -1  
+        &&
+        newObject.curseStatus.curseLevel == 0 ) {
+        
+        addRecentScore( newObject.email, inFitnessScore );
+        }
     
 
     if( ! newObject.isTutorial )        
@@ -15761,6 +15817,23 @@ static void leaderDied( LiveObject *inLeader ) {
             }
         }
 
+
+    // somewhere else in code, we have a condition that sometimes
+    // allows someone to keep following a dead and removed player
+    // this condition can cause a crash when we go to look up that leader's
+    // name
+    // 
+    // check for that here and correct for it, so we don't pass that stale
+    // leader on to others (or cause a crash by looking up their name).
+    if( inLeader->followingID != -1 ) {
+        LiveObject *higherLeader = getLiveObject( inLeader->followingID );
+        
+        if( higherLeader == NULL ||
+            higherLeader->error ) {
+            
+            inLeader->followingID = -1;
+            }
+        }
 
 
     // if leader is following no one (they haven't picked an heir to take over)
@@ -24748,7 +24821,7 @@ int main() {
                 logFitnessDeath( nextPlayer );
                 
 
-                if( age < shortLifeAge ) {
+                if( ! nextPlayer->isTutorial && age < shortLifeAge ) {
                     addShortLife( nextPlayer->email );
                     }
 

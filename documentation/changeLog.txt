@@ -4,13 +4,16 @@ http://onehouronelife.com/updateLog.php
 
 
 
-Version 363    ???
+Version 364    2021-May-26
 
 --Network stats command is now /NETWORK to avoid blocking crafting filter
   for /NET.  Fixes #692
 
 --Tweaked hint sheet paper sprite position to keep text from getting too close
   to edge.
+
+--Merged pull requiest #665, fixing out of range sound bug.  Thanks Justin L.
+
 
 
 
@@ -101,6 +104,46 @@ Server Fixes
   uncrossable boundary between jungle and desert (crossing code assumes there
   is a grey biome gap between specialty biomes).
 
+--Fixed server crash when a leader dies who is still following a stale,
+  dead-and-removed leader.
+
+--Fixed a few instances of char to signed char, because on Rasberry Pi, char
+  defaults to unsigned.
+
+--Fixed so that extreme homeland outliers can't shift average unilaterally and
+  screw up placement of future Eves.  We now discard the largest outliers one
+  by one until all considered homelands are 1500 from the remaining average x
+  position.
+
+--Reduced outlier radius to 500 (was 1500) when computing cluster of existing
+  homelands for next Eve placement.
+
+--Tutorial lives don't count toward last-life-was-short trigger for
+  posse-joining restrictions.
+
+--Fixed so that when we're tracking a window of the ten highest-fitness recent
+  players, to judge the fitness level for the next Eve player, we don't count
+  players that aren't Eve eligible for other reasons (tutorial players, d-town
+  players, or players that are cycling back to the same family again).
+
+--Unblocked twins/trips/quads from earning curse tokens.
+
+--Unblocked twins/trips/quads from cursing other players.
+
+--Only considering primary homelands when looking at homeland cluster for Eve
+  placement, so one family can't spam wells to swamp the cluster average
+  location.
+
+--Min active players for specialty biomes increased to 30 (was 15).
+
+--Male override support.
+
+--Special logging of eve placement relative to non-outlier homelands.
+
+--Realized that many families don't have primary homelands, since they resettle
+  old villages and don't necessarily tap out new iron.  Thus, for detecting
+  homeland cluster for future Eve placement, we now use each family's first
+  homeland instead of only their primary one.
 
 
 
