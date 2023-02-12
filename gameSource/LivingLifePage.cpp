@@ -578,6 +578,7 @@ static void updatePersonHomeLocation( int inPersonID, int inX, int inY ) {
     }
 
 
+char isAncientHomePosHell = false;
 
 static void addAncientHomeLocation( int inX, int inY ) {
     removeHomeLocation( inX, inY );
@@ -5203,6 +5204,7 @@ ObjectAnimPack LivingLifePage::drawLiveObject(
                 }
 
             // rideable object
+            if( ! heldObject->hideRider )
             holdingPos =
                 drawObjectAnim( inObj->displayID, 2, curType, 
                                 timeVal,
@@ -6100,7 +6102,12 @@ void LivingLifePage::drawHomeSlip( doublePair inSlipPos, int inIndex ) {
         if( inIndex == 1 ) {
             doublePair bellPos = distPos;
             bellPos.y += 20;    
-            handwritingFont->drawString( "BELL", bellPos, alignCenter );
+            
+            const char *arrowWord = "BELL";
+            if( isAncientHomePosHell ) {
+                arrowWord = "HELL";
+                }
+            handwritingFont->drawString( arrowWord, bellPos, alignCenter );
             }
         
         if( temporary ) {
@@ -14201,13 +14208,18 @@ void LivingLifePage::step() {
                     
                     if( d > 32 ) {
                         addAncientHomeLocation( posX, posY );
+                        isAncientHomePosHell = false;
                         
                         // play sound in distance
                         ObjectRecord *monObj = getObject( monumentID );
                         
                         if( monObj != NULL && 
                             monObj->creationSound.numSubSounds > 0 ) {    
-                             
+                            
+                            if( strstr( monObj->description, "+hellArrow" ) ) {
+                                isAncientHomePosHell = true;
+                                }
+
                             doublePair realVector = 
                                 getVectorFromCamera( lrint( posX ),
                                                      lrint( posY ) );
